@@ -1,0 +1,57 @@
+# Go specific
+*.a
+*.so
+*.dylib
+*.o
+*.h
+*.c
+*.go
+*.go.swp
+*.DS_Store
+
+# Compiled binaries
+bin/
+build/
+dist/
+pkg/
+
+# IDE-specific files
+*.swp
+*.bak
+*.tmp
+*.log
+*.suo
+*.user
+*.csproj
+*.sln
+*.dll
+*.pdb
+*.exp
+*.lib
+*.ncb
+*.sdf
+*.suo
+*.vcxproj
+*.user
+*.vspscc
+*.webinfo
+*.exe
+*.exe~
+*.out
+
+# Test results
+coverage/
+test/
+testdata/
+
+# IDE configuration files
+.vscode/
+.idea/
+.settings/
+
+# Other common files
+.DS_Store
+Thumbs.db
+go.work
+go.work.sum
+.env
