@@ -13,7 +13,6 @@
 bin/
 build/
 dist/
-pkg/
 
 # IDE-specific files
 *.swp
