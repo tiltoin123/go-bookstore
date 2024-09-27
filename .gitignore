@@ -5,7 +5,6 @@
 *.o
 *.h
 *.c
-*.go
 *.go.swp
 *.DS_Store
 
