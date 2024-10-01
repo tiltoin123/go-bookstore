@@ -5,31 +5,35 @@ import (
 	"log"
 	"os"
 
-	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-var( db *gorm.DB)//what this line does
+var db *gorm.DB
 
-func Connect(){
-	err := godotenv.Load()
-
+func Connect() {
+    // Load the .env file
+    err := godotenv.Load("../.env")
     if err != nil {
-        log.Fatal("Erro ao carregar o arquivo .env")
+        log.Fatal("Erro ao carregar o arquivo .env", err)
     }
-	
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-    os.Getenv("DB_USER"), 
-    os.Getenv("DB_PASSWORD"), 
-    os.Getenv("DB_HOST"), 
-    os.Getenv("DB_PORT"), 
-    os.Getenv("DB_NAME"))
 
-	d, err := gorm.Open("mysql",dsn)
-	if err!= nil{
-		panic(err)
-	}
-	db = d
+    // Prepare the DSN
+    dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+        os.Getenv("DB_USER"),
+        os.Getenv("DB_PASSWORD"),
+        os.Getenv("DB_HOST"),
+        os.Getenv("DB_PORT"),
+        os.Getenv("DB_NAME"))
+
+    // Open the database connection
+    d, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        log.Fatal("Erro ao conectar com o banco de dados", err)
+    }
+
+    db = d
 }
 
 func GetDB() *gorm.DB {

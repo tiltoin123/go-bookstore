@@ -3,8 +3,8 @@ package models
 import (
 	"fmt"
 
-	"github.com/jinzhu/gorm"
 	"github.com/tiltoin123/go-bookstore/pkg/config"
+	"gorm.io/gorm"
 )
 
 var db *gorm.DB
@@ -31,7 +31,6 @@ func init(){
 }
 
 func(b *Book) CreateBook() *Book{
-	db.NewRecord(b)
 	if err:=db.Error; err!=nil{
 		fmt.Println("error checking primary key",err)
 		return nil
