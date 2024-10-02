@@ -1,74 +1,102 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/tiltoin123/go-bookstore/pkg/config"
-	"gorm.io/gorm"
 )
 
-var db *gorm.DB
+var db *sql.DB
 
-type Book struct{
-	gorm.Model
-	Name string `gorm:"" json:"name"`
-	Author string `gorm:"" json:"author"`
-	Publication string `gorm:"" json:"publication"`
+type Book struct {
+    ID          int64  `json:"id"`
+    Name        string `json:"name"`
+    Author      string `json:"author"`
+    Publication string `json:"publication"`
+    CreatedAt    string`json:"created_at"`
+    UpdatedAt    string`json:"updated_at"`
+    DeletedAt    string`json:"deleted_at"`
 }
 
 func init(){
 	config.Connect()
-	db = config.GetDB()
-	if err:=db.Error; err!=nil{
-		fmt.Println("error connecting",err)
-		return
-	}
-	db.AutoMigrate(&Book{})
-	if err:=db.Error; err!=nil{
-		fmt.Println("error migrating",err)
-		return
-	}
+	config.GetDB()
 }
 
-func(b *Book) CreateBook() *Book{
-	if err:=db.Error; err!=nil{
-		fmt.Println("error checking primary key",err)
-		return nil
-	}
-	db.Create(&b)
-	if err:=db.Error; err!=nil{
-		fmt.Println("error inserting data",err)
-		return nil
-	}
-	return b
-}
-
-func UpdateBook(Id int64, Data Book) *Book {
-    var book Book
-    
-    if err := db.Where("ID = ?", Id).First(&book).Error; err != nil {
-        fmt.Println("Error finding book:", err)
-        return nil
+func CreateBook(b *Book) (*Book, error) {
+    // Prepare the query with INSERT ... RETURNING
+    stmt, err := db.Prepare(`INSERT INTO books (name, author, publication, created_at, updated_at) 
+                             VALUES (?, ?, ?, NOW(), NOW()) 
+                             RETURNING id, name, author, publication, created_at, updated_at`)
+    if err != nil {
+        fmt.Println("Error preparing statement:", err)
+        return nil, err
     }
-    
-    if err := db.Model(&book).Updates(Data).Error; err != nil {
+    defer stmt.Close()
+
+    // Execute the query and scan the inserted row directly
+    err = stmt.QueryRow(b.Name, b.Author, b.Publication).Scan(&b.ID, &b.Name, &b.Author, &b.Publication)
+    if err != nil {
+        fmt.Println("Error executing query:", err)
+        return nil, err
+    }
+
+    return b, nil
+}
+
+func UpdateBook(Id int64, data Book) (*Book, error) {
+    stmt,err := db.Prepare(`UPDATE books SET name = ?, author = ?, publication = ?, updated_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at`)
+    if err != nil {
+        fmt.Println("Error preparing statement:", err)
+        return nil, err
+    }
+    defer stmt.Close()
+
+    err = stmt.QueryRow(data.Name, data.Author, data.Publication, Id).Scan(&data.ID,&data.Name,&data.Author,&data.Publication,&data.UpdatedAt)
+    if err != nil {
         fmt.Println("Error updating book:", err)
-        return nil
+        return nil, err
     }
-    
-    return &book
+
+    return &data, nil
 }
 
-func GetAllBooks() []Book{
-	var Books []Book
-	if err:=db.Find(&Books).Error; err!=nil {
-		fmt.Println("Error listing books",err)
-		return nil
-	}
-	return Books
+func GetAllBooks() ([]Book, error) {
+    var books []Book
+
+    stmt, err := db.Prepare(`SELECT id, name, author, publication, created_at, updated_at FROM books`)
+    if err != nil {
+        fmt.Println("Error preparing statement:", err)
+        return nil, err
+    }
+    defer stmt.Close()
+
+    rows, err := stmt.Query()
+    if err != nil {
+        fmt.Println("Error executing query:", err)
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var book Book
+        if err := rows.Scan(&book.ID, &book.Name, &book.Author, &book.Publication, &book.CreatedAt, &book.UpdatedAt); err != nil {
+            fmt.Println("Error scanning book:", err)
+            return nil, err
+        }
+        books = append(books, book)
+    }
+
+    if err = rows.Err(); err != nil {
+        fmt.Println("Error iterating rows:", err)
+        return nil, err
+    }
+
+    return books, nil
 }
 
-func GetBookById(Id int64) (*Book, *gorm.DB) {
+func GetBookById(Id int64) (*Book, *sql.DB) {
     var getBook Book
     db := db.Where("ID = ?", Id).Find(&getBook)
     
