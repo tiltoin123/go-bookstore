@@ -24,8 +24,7 @@ func init(){
 	config.GetDB()
 }
 
-func CreateBook(b *Book) (*Book, error) {
-    // Prepare the query with INSERT ... RETURNING
+func (b *Book) CreateBook() (*Book, error) {
     stmt, err := db.Prepare(`INSERT INTO books (name, author, publication, created_at, updated_at) 
                              VALUES (?, ?, ?, NOW(), NOW()) 
                              RETURNING id, name, author, publication, created_at, updated_at`)
@@ -35,7 +34,6 @@ func CreateBook(b *Book) (*Book, error) {
     }
     defer stmt.Close()
 
-    // Execute the query and scan the inserted row directly
     err = stmt.QueryRow(b.Name, b.Author, b.Publication).Scan(&b.ID, &b.Name, &b.Author, &b.Publication)
     if err != nil {
         fmt.Println("Error executing query:", err)
@@ -45,24 +43,24 @@ func CreateBook(b *Book) (*Book, error) {
     return b, nil
 }
 
-func UpdateBook(Id int64, data Book) (*Book, error) {
-    stmt,err := db.Prepare(`UPDATE books SET name = ?, author = ?, publication = ?, updated_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at`)
+func UpdateBook(Id int64, b Book) (*Book, error) {
+    stmt, err := db.Prepare(`UPDATE books SET name = ?, author = ?, publication = ?, updated_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at`)
     if err != nil {
         fmt.Println("Error preparing statement:", err)
         return nil, err
     }
     defer stmt.Close()
 
-    err = stmt.QueryRow(data.Name, data.Author, data.Publication, Id).Scan(&data.ID,&data.Name,&data.Author,&data.Publication,&data.UpdatedAt)
+    err = stmt.QueryRow(b.Name, b.Author, b.Publication, b.ID).Scan(&b.ID, &b.Name, &b.Author, &b.Publication, &b.CreatedAt, &b.UpdatedAt)
     if err != nil {
         fmt.Println("Error updating book:", err)
         return nil, err
     }
 
-    return &data, nil
+    return &b, nil
 }
 
-func GetAllBooks() ([]Book, error) {
+func (b *Book) GetAllBooks() ([]Book, error) {
     var books []Book
 
     stmt, err := db.Prepare(`SELECT id, name, author, publication, created_at, updated_at FROM books`)
@@ -96,7 +94,7 @@ func GetAllBooks() ([]Book, error) {
     return books, nil
 }
 
-func GetBookById(Id int64) (*Book, error) {
+func (b *Book) GetBookById(Id int64) (*Book, error) {
     var book Book
     
     stmt, err := db.Prepare(`SELECT id, name, author, publication, created_at, updated_at, deleted_at FROM books WHERE id = ?`)
@@ -115,16 +113,15 @@ func GetBookById(Id int64) (*Book, error) {
     return &book, nil
 }
 
-func DeleteBook(Id int64) (*Book, error) {
-    var book Book
-    stmt,err := db.Prepare(`UPDATE books SET deleted_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at,deleted_at`)
+func (b *Book) DeleteBook(Id int64) (*Book, error) {
+    stmt, err := db.Prepare(`UPDATE books SET deleted_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at, deleted_at`)
     if err != nil {
         fmt.Println("Error preparing statement:", err)
         return nil, err
     }
     defer stmt.Close()
 
-    err = stmt.QueryRow( Id).Scan(&book.ID,&book.Name,&book.Author,&book.Publication,&book.CreatedAt,&book.UpdatedAt,&book.DeletedAt)
+    err = stmt.QueryRow(Id).Scan(&b.ID, &b.Name, &b.Author, &b.Publication, &b.CreatedAt, &b.UpdatedAt, &b.DeletedAt)
     if err != nil {
         if err == sql.ErrNoRows {
             fmt.Println("No book found with the given ID")
@@ -134,6 +131,5 @@ func DeleteBook(Id int64) (*Book, error) {
         return nil, err
     }
 
-    
-    return &book, nil
+    return b, nil
 }
