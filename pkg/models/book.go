@@ -96,23 +96,44 @@ func GetAllBooks() ([]Book, error) {
     return books, nil
 }
 
-func GetBookById(Id int64) (*Book, *sql.DB) {
-    var getBook Book
-    db := db.Where("ID = ?", Id).Find(&getBook)
+func GetBookById(Id int64) (*Book, error) {
+    var book Book
     
-    if err := db.Error; err != nil {
-        fmt.Println("Error finding book:", err)
-        return nil, nil
+    stmt, err := db.Prepare(`SELECT id, name, author, publication, created_at, updated_at, deleted_at FROM books WHERE id = ?`)
+    if err != nil {
+        fmt.Println("Error preparing statement:", err)
+        return nil, err
     }
-    
-    return &getBook, db
+    defer stmt.Close()
+
+    err = stmt.QueryRow(Id).Scan(&book.ID, &book.Name, &book.Author, &book.Publication, &book.CreatedAt, &book.UpdatedAt, &book.DeletedAt)
+    if err != nil {
+        fmt.Println("Error executing query:", err)
+        return nil, err
+    }
+
+    return &book, nil
 }
 
-func DeleteBook(Id int64) *Book {
+func DeleteBook(Id int64) (*Book, error) {
     var book Book
-    if err := db.Where("ID = ?", Id).Delete(&book).Error; err != nil {
-        fmt.Println("Error deleting book:", err)
-        return nil
+    stmt,err := db.Prepare(`UPDATE books SET deleted_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at,deleted_at`)
+    if err != nil {
+        fmt.Println("Error preparing statement:", err)
+        return nil, err
     }
-    return &book
+    defer stmt.Close()
+
+    err = stmt.QueryRow( Id).Scan(&book.ID,&book.Name,&book.Author,&book.Publication,&book.CreatedAt,&book.UpdatedAt,&book.DeletedAt)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            fmt.Println("No book found with the given ID")
+            return nil, nil
+        }
+        fmt.Println("Error deleting book:", err)
+        return nil, err
+    }
+
+    
+    return &book, nil
 }
