@@ -21,10 +21,11 @@ type Book struct {
 
 func init(){
 	config.Connect()
-	config.GetDB()
+	db=config.GetDB()
 }
 
 func (b *Book) CreateBook() (*Book, error) {
+    
     stmt, err := db.Prepare(`INSERT INTO books (name, author, publication, created_at, updated_at) 
                              VALUES (?, ?, ?, NOW(), NOW()) 
                              RETURNING id, name, author, publication, created_at, updated_at`)
@@ -44,6 +45,7 @@ func (b *Book) CreateBook() (*Book, error) {
 }
 
 func UpdateBook(Id int64, b Book) (*Book, error) {
+    
     stmt, err := db.Prepare(`UPDATE books SET name = ?, author = ?, publication = ?, updated_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at`)
     if err != nil {
         fmt.Println("Error preparing statement:", err)
@@ -61,6 +63,7 @@ func UpdateBook(Id int64, b Book) (*Book, error) {
 }
 
 func (b *Book) GetAllBooks() ([]Book, error) {
+    
     var books []Book
 
     stmt, err := db.Prepare(`SELECT id, name, author, publication, created_at, updated_at FROM books`)
@@ -95,6 +98,7 @@ func (b *Book) GetAllBooks() ([]Book, error) {
 }
 
 func (b *Book) GetBookById(Id int64) (*Book, error) {
+    
     var book Book
     
     stmt, err := db.Prepare(`SELECT id, name, author, publication, created_at, updated_at, deleted_at FROM books WHERE id = ?`)
@@ -114,6 +118,7 @@ func (b *Book) GetBookById(Id int64) (*Book, error) {
 }
 
 func (b *Book) DeleteBook(Id int64) (*Book, error) {
+    
     stmt, err := db.Prepare(`UPDATE books SET deleted_at = NOW() WHERE id = ? RETURNING id, name, author, publication, created_at, updated_at, deleted_at`)
     if err != nil {
         fmt.Println("Error preparing statement:", err)
