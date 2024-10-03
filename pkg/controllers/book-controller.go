@@ -99,40 +99,38 @@ func DeleteBook(w http.ResponseWriter, r *http.Request){
 
 func UpdateBook(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-	bookId:= vars["id"]
-	book := &models.Book{}
-	book.Name=vars["name"]
-	book.Author=vars["author"]
-	book.Publication=vars["publication"]
+    bookId := vars["id"]
+
+    // Parse the book ID from the URL
+    ID, err := strconv.ParseInt(bookId, 10, 64) // Base 10, tamanho 64 bits
+    if err != nil {
+        http.Error(w, "Error parsing book ID: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    // Create a new book instance
+    book := &models.Book{}
 
     // Parse the request body into the book instance
-    if err := utils.ParseBody(r, book); err != nil {
+    if err := utils.ParseBody(r, &book); err != nil {
         http.Error(w, "Error parsing request body: "+err.Error(), http.StatusBadRequest)
         return
     }
 
-    // Parse the book ID
-    ID, err := strconv.ParseInt(bookId, 10, 64) // Use 10 for base and 64 for bit size
-    if err != nil {
-        http.Error(w, "Error while parsing book ID: "+err.Error(), http.StatusBadRequest)
-        return
-    }
-
-    // Call the method to update the book
-    updatedBook, err := models.UpdateBook(ID, book)
+    // Call the model function to update the book in the database
+    updatedBook, err := models.UpdateBook(ID, *book)
     if err != nil {
         http.Error(w, "Error updating book: "+err.Error(), http.StatusInternalServerError)
         return
     }
 
-    // Marshal the updated book into JSON
+    // Marshal the updated book to JSON and send the response
     res, err := json.Marshal(updatedBook)
     if err != nil {
         http.Error(w, "Error marshaling updated book: "+err.Error(), http.StatusInternalServerError)
         return
     }
 
-    // Set response headers and status
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
     w.Write(res)
