@@ -33,9 +33,8 @@ func GetBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBookById(w http.ResponseWriter,r *http.Request){
-	vars := mux.Vars(r)
-	bookId:=vars["bookId"]
-	ID,err:=strconv.ParseInt(bookId,0,0)
+    id:= r.PathValue("id")
+	ID,err:=strconv.ParseInt(id,0,0)
 	if err!=nil{
 		fmt.Println("Error while parsing",err)
 	}
@@ -56,33 +55,42 @@ func GetBookById(w http.ResponseWriter,r *http.Request){
 }
 
 func CreateBook(w http.ResponseWriter, r *http.Request){
-	vars := mux.Vars(r)
-	book := &models.Book{}
-	book.Name=vars["name"]
-	book.Author=vars["author"]
-	book.Publication=vars["publication"]
-	CreateBook := &models.Book{}
-	utils.ParseBody(r,CreateBook)
-	b,err:=book.CreateBook()
-	res, err := json.Marshal(b)
-	if err != nil {
-        http.Error(w, "Error marshaling created book: "+err.Error(), http.StatusInternalServerError)
-        return
-    }
-	w.Header().Set("Content-Type", "pkglication/json")
-    w.WriteHeader(http.StatusOK)
-    w.Write(res)
+  book := &models.Book{}
+  err := utils.ParseBody(r, book)
+  if err != nil {
+    http.Error(w, "Error parsing request body: "+err.Error(), http.StatusBadRequest)
+    return
+  }
+
+  b, err := book.CreateBook()
+  if err != nil {
+    http.Error(w, "Error creating book: "+err.Error(), http.StatusInternalServerError)
+    return
+  }
+
+  res, err := json.Marshal(b)
+  if err != nil {
+    http.Error(w, "Error marshaling created book: "+err.Error(), http.StatusInternalServerError)
+    return
+  }
+
+  w.Header().Set("Content-Type", "application/json")
+  w.WriteHeader(http.StatusOK)
+
+  w.Write(res)
 }
 
 func DeleteBook(w http.ResponseWriter, r *http.Request){
-	vars :=mux.Vars(r)
-	bookId := vars["bookId"]
+    bookId:= r.PathValue("id")
 	book := &models.Book{}
 	ID,err:=strconv.ParseInt(bookId,0,0)
 	if err!=nil{
 		fmt.Println("Error while parsing",err)
 	}
 	deletedBook,err:=book.DeleteBook(ID)
+    if err != nil {
+        fmt.Println("Error while deleting book",err)
+    }
 		if deletedBook==nil{
 		http.Error(w, "Error deleting book: ", http.StatusInternalServerError)
         return
