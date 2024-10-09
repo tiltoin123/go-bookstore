@@ -4,14 +4,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/tiltoin123/go-bookstore/pkg/routes"
 )
 
-func main(){
-	r:= mux.NewRouter()
-	routes.RegisterBookStoreRoutes(r)
-	http.Handle("/",r)
-	log.Fatal(http.ListenAndServe("localhost:9000",r))
-	println("Server is running on Port 9000")
+func main() {
+
+	routes.RegisterBookStoreRoutes()
+	http.Handle("/", routes.Router)
+	log.Fatal(http.ListenAndServe("localhost:9000", routes.Router))
 }
